@@ -13,7 +13,7 @@ def generate_main_cmake(project_name):
     cmake_string = f"cmake_minimum_required(VERSION {cmake_min_version})\n"
     cmake_string += f"project({project_name})\n"
     cmake_string += f"set(CMAKE_CXX_STANDARD {cpp_standard})\n\n"
-    cmake_string += f"option(BUILD_TESTS \"Build {project_name} tests\" ON)\n\n"
+    cmake_string += f"option(BUILD_TESTS \"Build {project_name} tests\" OFF)\n\n"
 
     cmake_string += ("set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)\n" +
                      "set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)\n" +
@@ -96,9 +96,9 @@ def generate_cmake_for_libraries(library_names):
 
 
 def generate_cmake_for_tests(library_names):
-    tests_main_cmake_string = "enable_testing()\n"
+    tests_main_cmake_string = "enable_testing()\n\n"
     for library_name in library_names:
-        tests_main_cmake_string += f"add_subdirectory({library_name})\n"
+        tests_main_cmake_string += f"add_subdirectory({library_name}_tests)\n"
     tests_main_cmake_string += "\n"
 
     tests_main_cmake_string += ("include(FetchContent)\n"+
@@ -119,7 +119,7 @@ def generate_cmake_for_library_tests(library_names):
         cmake_string = ("file(GLOB SRCS *.cpp)\n" +
                         f"add_executable({tests_name} ${{SRCS}})\n" +
                         f"target_link_libraries({tests_name} PRIVATE {library_name} gtest_main)\n" +
-                        f"target_include_directories(${{CMAKE_SOURCE_DIR}}/src/{library_name})\n")
+                        f"target_include_directories({tests_name} PRIVATE ${{CMAKE_SOURCE_DIR}}/src/{library_name})\n")
         
         tests_cmake = open("CMakeLists.txt", "w")
         tests_cmake.write(cmake_string)
@@ -155,4 +155,4 @@ parser.add_argument('-l', '--libraries', action="extend", nargs="+", type=str, h
 parser.add_argument('-a', '--applications', action="extend", nargs="+", type=str, help="applications list")
 
 args = parser.parse_args()
-generate_project(args.project_name, args.libraries, args.applications)
+generate_project(args.project_name, sorted(args.libraries), sorted(args.applications))
